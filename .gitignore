@@ -1,2 +1,7 @@
 .env
 polly_output/
+
+# PyInstaller artifacts
+src/build/
+src/dist/
+src/*.spec
