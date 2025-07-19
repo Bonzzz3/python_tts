@@ -6,8 +6,16 @@ A Python Text-to-Speech App using Amazon Polly TTS Service. This app takes text 
 
 ## Features
 - Convert text to speech using AWS Polly
-- Outputs MP3 files to your Downloads folder
-- (Coming soon...) Plays converted audio without saving audio
+- Region selection with automatic engine detection
+- Real-time character counting (3000 char limit)
+- Support for multiple voice engines (Standard, Neural, Long-form, Generative)
+- Multiple language and voice selection
+- Multiple output formats (mp3, ogg_vorbis, pcm)
+- Multiple sample rate
+- Audio Generation Options:
+    - Instant playback ("Generate & Play")
+    - Save to Downloads folder ("Generate & Save")
+- Save and edit AWS credentials 
 
 ## Setup Guide
 
@@ -70,26 +78,47 @@ A Python Text-to-Speech App using Amazon Polly TTS Service. This app takes text 
 3. Double click on the zip file to open it
 4. Double click on the TTSApp to open the app
 
-## Usage
-### 1. Enter AWS Credentials:
-- Open the app
-- In the "AWS Configuration" section, enter:
+## User Guide for AWS Polly
+
+### 1. Select Amazon Polly TTS
+
+<img src="images/main_nav.png" width="800" style="border: 2px solid grey; border-radius: 10px;"><br>
+- Launch the application and select Amazon Polly TTS
+
+---
+
+### 2. Credential Configuration
+
+<img src="images/polly_auth.png" width="800" style="border: 2px solid grey; border-radius: 10px;"><br>
+
+- In the "AWS Credentials Setup" section, enter credentials from your downloaded .csv file:
     - AWS Access Key ID (from your downloaded .csv)
     - AWS Secret Access Key (from your downloaded .csv)
-    - AWS Region (default: `ap-southeast-1`)
+- Enable ☑ Remember credentials for automatic login
+- Click **"Save & Continue"**
 
-### 2. Enter Text
-Type or paste your text into the large text box.
+---
 
-### 3. Select Voice
-Choose from available voices:
-- Joanna (Female, English)
-- Matthew (Male, English)
-- Amy (Female, English)
-- Brian (Male, English)
+### 3. Text-to-Speech Conversion
 
-### 4. Generate Audio
-Click "Generate Speech" to:
-1. Convert text to speech using AWS Polly
-2. Save as MP3 in your Downloads folder with filename format: tts_output_[VOICE]_[TIMESTAMP].mp3
-3. The app will show the save path in the status message
+<img src="images/Ui.png" width="800" style="border: 2px solid grey; border-radius: 10px;"><br>
+
+1. Select AWS region from dropdown (Recommended: us-east-1)
+2. Type or paste your text into the large text box. Character count available.
+3. Select Configurations:
+    - Voice Engine
+    - Language
+    - Voice
+4. Audio Settings (for "Generate & Save")
+    - Output Format
+    - Sample Rate
+5. Generate Audio:
+    - Press "Generate & Play" to convert your text and play audio immediately
+    - Press "Generate & Save" to convert your text and save audio file to your Downloads folder (The app will show the save path in the status message)
+
+## Project Roadmap
+
+- Transform app into an app that supports multiple TTS service
+- Make the app available for Windows and Linux (x86 architecture)
+- Add more features such as tracking free characters count remaining
+- Usage of AI assistance to refine the text (e.g., fix typos, grammar errors, improve language)
