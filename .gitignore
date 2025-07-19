@@ -1,5 +1,6 @@
 .env
 polly_output/
+__pycache__/
 
 # PyInstaller artifacts
 src/build/
