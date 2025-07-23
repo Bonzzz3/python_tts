@@ -27,7 +27,7 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
 - High-quality neural voices
 - Real-time character counting (3000 char limit)
 - Multiple language and voice selection
-- Save and edit AWS credentials
+- Save and edit Microsoft Azure credentials
 
 ## Setup Guide
 
