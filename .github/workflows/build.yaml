@@ -56,7 +56,7 @@ jobs:
 
       - name: Build Windows executable
         run: |
-          pyinstaller --onefile --windowed --add-binary="$(python -c 'import os, azure.cognitiveservices.speech; print(os.path.join(os.path.dirname(azure.cognitiveservices.speech.__file__), "libMicrosoft.CognitiveServices.Speech.core.dll"))'):azure/cognitiveservices/speech" \
+          pyinstaller --onefile --windowed --add-binary="$(python -c 'import os, azure.cognitiveservices.speech; print(os.path.join(os.path.dirname(azure.cognitiveservices.speech.__file__), \"Microsoft.CognitiveServices.Speech.core.dll\"))'):azure/cognitiveservices/speech" \
           --collect-all azure.cognitiveservices.speech --name TTSApp-windows src/main.py
 
       - name: Upload Windows executable
@@ -90,7 +90,7 @@ jobs:
 
       - name: Build Linux executable
         run: |
-          pyinstaller --onefile --windowed --add-binary="$(python -c 'import os, azure.cognitiveservices.speech; print(os.path.join(os.path.dirname(azure.cognitiveservices.speech.__file__), "libMicrosoft.CognitiveServices.Speech.core.dll"))'):azure/cognitiveservices/speech" \
+          pyinstaller --onefile --windowed --add-binary="$(python -c 'import os, azure.cognitiveservices.speech; print(os.path.join(os.path.dirname(azure.cognitiveservices.speech.__file__), \"libMicrosoft.CognitiveServices.Speech.core.so\"))'):azure/cognitiveservices/speech" \
           --collect-all azure.cognitiveservices.speech --name TTSApp-linux src/main.py
 
       - name: Upload Linux executable
