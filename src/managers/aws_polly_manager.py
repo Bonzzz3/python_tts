@@ -41,13 +41,17 @@ class AWSPollyManager:
             aws_secret_access_key=self.secret_key_var.get(),
             region_name=region
         )
+    
+    def get_session(self):
+        """Get a boto3 session with the provided credentials"""
+        return boto3.Session(
+            aws_access_key_id=self.access_key_var.get(),
+            aws_secret_access_key=self.secret_key_var.get()
+        )
 
     def get_supported_regions(self):
         """Get all regions supporting Polly"""
-        session = boto3.Session(
-            aws_access_key_id=self.access_key_var.get(),
-            aws_secret_access_key=self.secret_key_var.get(),
-        )
+        session = self.get_session()
         regions = session.get_available_regions('polly')
         return sorted(regions) if regions else []
 

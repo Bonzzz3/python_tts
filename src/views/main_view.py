@@ -6,6 +6,7 @@ class MainNavigationView(ttk.Frame):
         super().__init__(parent, *args, **kwargs)
         self.controller = controller
         self.polly_btn = None
+        self.azure_btn = None
         self.setup_ui()
 
     def setup_ui(self):
@@ -24,10 +25,19 @@ class MainNavigationView(ttk.Frame):
         )
         self.polly_btn.pack(pady=15)
         
+        # Azure Speech Services Button
+        self.azure_btn = ttk.Button(
+            self,
+            text="Azure Speech Services",
+            command=self.controller.navigate_to_azure_interface,
+            width=20
+        )
+        self.azure_btn.pack(pady=15)
+        
         # Other TTS Button
         ttk.Button(
             self,
             text="Other TTS (Coming Soon)",
-            command=self.controller.show_placeholder_tts,
+            command=lambda: self.controller.status_bar.update_status("Other TTS services coming soon!"),
             width=20
         ).pack(pady=15)

@@ -2,15 +2,14 @@ import subprocess
 import platform
 import tempfile
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 from datetime import datetime
-import boto3
 import os
 
 from managers.aws_auth_manager import AWSAuthenticationManager
 from managers.aws_polly_manager import AWSPollyManager
-from views.auth_view import AuthenticationView
-from views.polly_view import PollyView
+from views.polly_auth_view import PollyAuthenticationView
+from views.polly_main_view import PollyMainView
 
 class PollyController:
     """Controller for Amazon Polly TTS functionality"""
@@ -56,7 +55,7 @@ class PollyController:
     def _show_polly_main_interface(self):
         """Show the main Polly TTS interface"""
         self.clear_frame()
-        self.main_ui = PollyView(self.main_frame, self)
+        self.main_ui = PollyMainView(self.main_frame, self)
         self.load_regions()
         self.char_count_var.set("0/3000")
         self.status_bar.update_status("Amazon Polly ready")
@@ -64,7 +63,7 @@ class PollyController:
     def _show_polly_auth_interface(self):
         """Show the Polly authentication interface"""
         self.clear_frame()
-        self.credentials_ui = AuthenticationView(self.main_frame, self)
+        self.credentials_ui = PollyAuthenticationView(self.main_frame, self)
         self.status_bar.update_status("Enter AWS credentials")
 
     def clear_frame(self):
@@ -235,12 +234,9 @@ class PollyController:
                 self.main_frame.master.update()
                 messagebox.showerror("Error", "Both Access Key and Secret Key are required")
                 return
-            
-            session = boto3.Session(
-                aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key
-            )
-            
+
+            session = self.polly_manager.get_session()
+
             # Test the credentials by making a simple AWS call
             self.status_bar.update_status("Authenticating with AWS...")
             self.main_frame.master.update()

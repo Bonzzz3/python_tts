@@ -1,6 +1,6 @@
 from tkinter import ttk
 
-class AuthenticationView(ttk.Frame):
+class PollyAuthenticationView(ttk.Frame):
     """UI for entering AWS credentials"""
     def __init__(self, parent, controller, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)

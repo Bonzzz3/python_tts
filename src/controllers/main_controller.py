@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox
 from views.main_view import MainNavigationView
 from views.widget.status_bar import StatusBar
 from controllers.polly_controller import PollyController
+from controllers.azure_controller import AzureController
 
 class MainController:
     """Main controller for the TTS application navigation and coordination"""
@@ -22,6 +23,7 @@ class MainController:
         
         # Initialize controllers
         self.polly_controller = PollyController(self.main_frame, self.status_bar, self)
+        self.azure_controller = AzureController(self.main_frame, self.status_bar, self)
         
         # Always start with navigation screen
         self.show_navigation()
@@ -49,13 +51,22 @@ class MainController:
         if hasattr(self, 'navigation_view') and self.navigation_view.winfo_exists():
             self.navigation_view.polly_btn.config(state=tk.NORMAL)
 
-    def show_placeholder_tts(self):
-        """Placeholder for future TTS services"""
-        self.status_bar.update_status("Loading other TTS service...")
-        self.root.after(1500, lambda: [
-            self.status_bar.update_status("Other TTS services coming soon!"),
-            messagebox.showinfo("Coming Soon", "Other TTS services will be available in a future update")
-        ])
+    def navigate_to_azure_interface(self):
+        """Navigate to Azure TTS interface"""
+        # Disable button if navigation view exists
+        if hasattr(self, 'navigation_view') and self.navigation_view.winfo_exists():
+            self.navigation_view.azure_btn.config(state=tk.DISABLED)
+        
+        # Show loading state
+        self.update_status("Loading Azure Speech Services...")
+        self.root.update()
+        
+        # Delegate to azure controller
+        self.azure_controller.show_azure_interface()
+        
+        # Re-enable button if still on navigation view
+        if hasattr(self, 'navigation_view') and self.navigation_view.winfo_exists():
+            self.navigation_view.azure_btn.config(state=tk.NORMAL)
 
     def update_status(self, message, is_error=False):
         """Update status bar with message"""
