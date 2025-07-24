@@ -27,9 +27,7 @@ jobs:
 
       - name: Build macOS app
         run: |
-          pyinstaller --onefile --windowed --add-binary="$(python -c 'import os, azure.cognitiveservices.speech; print(os.path.join(os.path.dirname(azure.cognitiveservices.speech.__file__), \
-          "libMicrosoft.CognitiveServices.Speech.core.dylib"))'):azure/cognitiveservices/speech" \
-          --collect-all azure.cognitiveservices.speech --name TTSApp-macOS src/main.py
+          pyinstaller --onefile --windowed --additional-hooks-dir=hooks --name TTSApp-macOS src/main.py
 
       - name: Upload macOS executable
         uses: actions/upload-artifact@v4
@@ -57,11 +55,7 @@ jobs:
 
       - name: Build Windows executable
         run: |
-          $libPath = python -c "import os, azure.cognitiveservices.speech as speech; print(os.path.join(os.path.dirname(speech.__file__), 'libMicrosoft.CognitiveServices.Speech.core.dylib'))"
-          pyinstaller --onefile --windowed `
-            --add-binary="$($libPath):azure/cognitiveservices/speech" `
-            --collect-all azure.cognitiveservices.speech `
-            --name TTSApp-windows src/main.py
+          pyinstaller --onefile --windowed --additional-hooks-dir=hooks --name TTSApp-windows src/main.py
 
       - name: Upload Windows executable
         uses: actions/upload-artifact@v4
@@ -94,11 +88,7 @@ jobs:
 
       - name: Build Linux executable
         run: |
-          libPath=$(python -c "import os, azure.cognitiveservices.speech as speech; print(os.path.join(os.path.dirname(speech.__file__), 'libMicrosoft.CognitiveServices.Speech.core.dylib'))")
-          pyinstaller --onefile --windowed \
-            --add-binary="${libPath}:azure/cognitiveservices/speech" \
-            --collect-all azure.cognitiveservices.speech \
-            --name TTSApp-linux src/main.py
+          pyinstaller --onefile --windowed --additional-hooks-dir=hooks --name TTSApp-linux src/main.py
 
       - name: Upload Linux executable
         uses: actions/upload-artifact@v4
