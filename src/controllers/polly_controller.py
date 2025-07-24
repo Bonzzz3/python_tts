@@ -2,24 +2,21 @@ import subprocess
 import platform
 import tempfile
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 from datetime import datetime
-import boto3
 import os
 
 from managers.aws_auth_manager import AWSAuthenticationManager
 from managers.aws_polly_manager import AWSPollyManager
-from views.auth_view import AuthenticationView
-from views.main_view import MainNavigationView
-from views.polly_view import PollyView
-from views.widget.status_bar import StatusBar
+from views.polly_auth_view import PollyAuthenticationView
+from views.polly_main_view import PollyMainView
 
-class TTSAppController:
-    """Main controller for the TTS application"""
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Text-to-Speech App")
-        self.root.geometry("800x900")
+class PollyController:
+    """Controller for Amazon Polly TTS functionality"""
+    def __init__(self, main_frame, status_bar, main_controller=None):
+        self.main_frame = main_frame
+        self.status_bar = status_bar
+        self.main_controller = main_controller
         
         # Initialize variables
         self.access_key_var = tk.StringVar()
@@ -38,44 +35,17 @@ class TTSAppController:
         self.credentials_manager = AWSAuthenticationManager(self.access_key_var, self.secret_key_var)
         self.polly_manager = AWSPollyManager(self.access_key_var, self.secret_key_var)
         
-        # Create main container
-        self.main_frame = ttk.Frame(root)
-        self.main_frame.pack(fill="both", expand=True)
-        
-        # Create status bar
-        self.status_bar = StatusBar(root)
-        self.status_bar.pack(fill="x", side="bottom", pady=(0, 0))
-        
         # Check for saved credentials
         self.credentials_manager.load_credentials()
-        
-        # Always start with navigation screen
-        self.show_navigation()
 
     def show_navigation(self):
-        """Show the main navigation screen"""
-        self.clear_frame()
-        self.navigation_ui = MainNavigationView(self.main_frame, self)
-        self.status_bar.update_status("Select a TTS service")
+        """Navigate back to main navigation screen"""
+        if self.main_controller:
+            self.main_controller.show_navigation()
+        else:
+            self.update_status("Navigation not available", is_error=True)
 
-    def navigate_to_polly_interface(self):
-        """Handle complete navigation flow to Polly interface"""
-        # Disable button if navigation view exists
-        if hasattr(self, 'navigation_view') and self.navigation_view.winfo_exists():
-            self.navigation_view.polly_btn.config(state=tk.DISABLED)
-        
-        # Show loading state
-        self.update_status("Loading Amazon Polly interface...")
-        self.root.update()
-        
-        # Perform the navigation
-        self._show_polly_interface()
-        
-        # Re-enable button if still on navigation view
-        if hasattr(self, 'navigation_view') and self.navigation_view.winfo_exists():
-            self.navigation_view.polly_btn.config(state=tk.NORMAL)
-
-    def _show_polly_interface(self):
+    def show_polly_interface(self):
         """Determine and show the appropriate Polly interface view"""
         if self.access_key_var.get() and self.secret_key_var.get():
             self._show_polly_main_interface()
@@ -85,7 +55,7 @@ class TTSAppController:
     def _show_polly_main_interface(self):
         """Show the main Polly TTS interface"""
         self.clear_frame()
-        self.main_ui = PollyView(self.main_frame, self)
+        self.main_ui = PollyMainView(self.main_frame, self)
         self.load_regions()
         self.char_count_var.set("0/3000")
         self.status_bar.update_status("Amazon Polly ready")
@@ -93,20 +63,8 @@ class TTSAppController:
     def _show_polly_auth_interface(self):
         """Show the Polly authentication interface"""
         self.clear_frame()
-        self.credentials_ui = AuthenticationView(self.main_frame, self)
+        self.credentials_ui = PollyAuthenticationView(self.main_frame, self)
         self.status_bar.update_status("Enter AWS credentials")
-
-    def show_placeholder_tts(self):
-        """Placeholder for future TTS services"""
-        self.status_bar.update_status("Loading other TTS service...")
-        self.root.after(1500, lambda: [
-            self.status_bar.update_status("Other TTS services coming soon!"),
-            messagebox.showinfo("Coming Soon", "Other TTS services will be available in a future update")
-        ])
-
-    def update_status(self, message, is_error=False):
-        """Update status bar with message"""
-        self.status_bar.update_status(message, is_error)
 
     def clear_frame(self):
         """Clear all widgets from main frame"""
@@ -265,7 +223,7 @@ class TTSAppController:
     def verify_and_continue(self):
         """Verify credentials and continue to main polly interface"""
         self.status_bar.update_status("Verifying AWS credentials...")
-        self.root.update()
+        self.main_frame.master.update()
         
         try:
             access_key = self.access_key_var.get().strip()
@@ -273,18 +231,15 @@ class TTSAppController:
             
             if not access_key or not secret_key:
                 self.status_bar.update_status("Both Access Key and Secret Key are required", is_error=True)
-                self.root.update()
+                self.main_frame.master.update()
                 messagebox.showerror("Error", "Both Access Key and Secret Key are required")
                 return
-            
-            session = boto3.Session(
-                aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key
-            )
-            
+
+            session = self.polly_manager.get_session()
+
             # Test the credentials by making a simple AWS call
             self.status_bar.update_status("Authenticating with AWS...")
-            self.root.update()
+            self.main_frame.master.update()
             
             sts = session.client('sts')
             sts.get_caller_identity()
@@ -292,24 +247,24 @@ class TTSAppController:
             # Only save if credentials are valid
             if self.remember_var.get():
                 self.status_bar.update_status("Saving credentials...")
-                self.root.update()
+                self.main_frame.master.update()
                 
                 if not self.credentials_manager.save_credentials(True):
                     self.status_bar.update_status("Warning: Could not save credentials to keyring", is_error=True)
-                    self.root.update()
+                    self.main_frame.master.update()
                     messagebox.showwarning("Warning", "Could not save credentials to keyring")
                 else:
                     self.status_bar.update_status("Credentials saved securely")
-                    self.root.update()
+                    self.main_frame.master.update()
             
             self.status_bar.update_status("Credentials verified successfully!")
-            self.root.update()
+            self.main_frame.master.update()
             self._show_polly_main_interface()
             
         except Exception as e:
             error_msg = self._parse_aws_error(e)
             self.status_bar.update_status(f"Verification failed: {error_msg}", is_error=True)
-            self.root.update()
+            self.main_frame.master.update()
             messagebox.showerror("AWS Error", f"Invalid credentials: {error_msg}")
 
     def _parse_aws_error(self, error):
@@ -361,7 +316,7 @@ class TTSAppController:
             return
         
         self.status_bar.update_status("Generating...")
-        self.root.update()
+        self.main_frame.master.update()
 
         try:
             response = self.polly_manager.synthesize_speech(
@@ -413,7 +368,7 @@ class TTSAppController:
                 return
 
             self.status_bar.update_status("Generating...")
-            self.root.update()
+            self.main_frame.master.update()
 
             response = self.polly_manager.synthesize_speech(
                 region=self.region_var.get(),
@@ -442,6 +397,10 @@ class TTSAppController:
         except Exception as e:
             self.update_status(f"Playback error: {str(e)}", is_error=True)
 
+    def update_status(self, message, is_error=False):
+        """Update status bar with message"""
+        self.status_bar.update_status(message, is_error)
+
     @property
     def text_input(self):
         return self.main_ui.text_input
@@ -449,4 +408,3 @@ class TTSAppController:
     @property
     def char_count_label(self):
         return self.main_ui.char_count_label
-

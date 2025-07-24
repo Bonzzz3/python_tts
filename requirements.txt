@@ -1,2 +1,4 @@
 boto3
 keyring
+azure-cognitiveservices-speech
+babel
