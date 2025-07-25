@@ -1,4 +1,5 @@
 # Python TTS (Text-to-Speech) App
+
 A comprehensive Python Text-to-Speech application supporting multiple TTS services. Choose between Amazon Polly and Microsoft Azure Speech Services for high-quality text-to-speech conversion.
 
 <img src="images/main_nav.png" width="800" style="border: 2px solid grey; border-radius: 10px;"><br>
@@ -6,13 +7,15 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
 ## Features
 
 ### Core Features
+
 - **Multi-Service Support**: Choose between Amazon Polly and Microsoft Azure Speech Services
 - **Secure Credential Management**: Encrypted storage using system keyring
 - **Flexible Output Options**:
-    - Instant playback ("Generate & Play")
-    - Save to Downloads folder ("Generate & Save")
+  - Instant playback ("Generate & Play")
+  - Save to Downloads folder ("Generate & Save")
 
 ### Amazon Polly Features
+
 - Convert text to speech using AWS Polly
 - Region selection with automatic engine detection
 - Real-time character counting (3000 char limit)
@@ -23,6 +26,7 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
 - Save and edit AWS credentials
 
 ### Microsoft Azure Features
+
 - Convert text to speech using Azure Cognitive Services
 - High-quality neural voices
 - Real-time character counting (3000 char limit)
@@ -32,6 +36,7 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
 ## Setup Guide
 
 ### Installation
+
 1. Go to Releases then to the latest release
 2. Click on the .zip file to download it
 3. Double click on the zip file to open it
@@ -42,6 +47,7 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
 ### 1. AWS Account Setup
 
 #### Create AWS Account
+
 1. Go to [AWS Homepage](https://aws.amazon.com/)
 2. Click "Create Account"
 3. Provide:
@@ -55,17 +61,20 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
 ### 2. Configure IAM User
 
 #### Access IAM Console
+
 1. Log in to [AWS Management Console](https://console.aws.amazon.com/)
 2. Search for "IAM" in the top search bar
 3. Click on **IAM** under Services
 
 #### Create New User
+
 1. Under **Access management**, click **Users**
 2. Click **Create user**
 3. Enter a username (e.g., `tts-app-user`)
 4. Click **Next**
 
 #### Set Permissions
+
 1. Under **Permission options**, select:
    - ☑ **Attach policies directly**
 2. Search for `AmazonPollyFullAccess`
@@ -86,6 +95,7 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
 7. Click **Create access key**
 
 #### Save Credentials
+
 1. Click **Download .csv file**
 2. Store the .csv file securely which contains your:
    - `AWS Access key ID`
@@ -96,20 +106,25 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
 ### 1. Azure Account Setup
 
 #### Create Azure Account
+
 1. Go to [Azure Portal](https://portal.azure.com/)
 2. Click "Start free" or "Sign in"
 3. Create a new Microsoft account or use existing one
 4. Provide required information and verification
 
+---
+
 ### 2. Create Speech Service Resource
 
 #### Access Azure Portal
+
 1. Log in to [Azure Portal](https://portal.azure.com/)
 2. Click **"Create a resource"** (+ icon)
 3. Search for **"Speech"**
 4. Click **"Speech"** by Microsoft
 
 #### Configure Speech Service
+
 1. Fill in the required fields:
    - **Subscription**: Choose your subscription
    - **Resource Group**: Create new or use existing
@@ -118,6 +133,8 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
    - **Pricing Tier**: Choose appropriate tier (F0 for free tier)
 2. Click **"Review + create"**
 3. Click **"Create"**
+
+---
 
 ### 3. Get Service Credentials
 
@@ -138,7 +155,6 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
    - **Amazon Polly TTS** - AWS-powered speech synthesis
    - **Microsoft Azure TTS** - Azure Speech Services
 
-
 ## Using Amazon Polly TTS
 
 ### 1. Credential Configuration
@@ -146,10 +162,12 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
 <img src="images/polly_auth.png" width="800" style="border: 2px solid grey; border-radius: 10px;"><br>
 
 - In the "AWS Credentials Setup" section, enter credentials from your downloaded .csv file:
-    - AWS Access Key ID (from your downloaded .csv)
-    - AWS Secret Access Key (from your downloaded .csv)
+  - AWS Access Key ID (from your downloaded .csv)
+  - AWS Secret Access Key (from your downloaded .csv)
 - Enable ☑ **Remember credentials** for automatic login
 - Click **"Save & Continue"**
+
+---
 
 ### 2. Text-to-Speech with Polly
 
@@ -168,7 +186,6 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
     - **"Generate & Play"**: Convert and play audio immediately
     - **"Generate & Save"**: Convert and save to Downloads folder
 
-
 ## Using Microsoft Azure TTS
 
 ### 1. Credential Configuration
@@ -176,10 +193,12 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
 <img src="images/azure_auth.png" width="800" style="border: 2px solid grey; border-radius: 10px;"><br>
 
 - In the "Azure Speech Service Setup" section, enter your Azure credentials:
-    - **Subscription Key** (Key 1 from Azure portal)
-    - **Endpoint URL** (from Azure portal)
+  - **Subscription Key** (Key 1 from Azure portal)
+  - **Endpoint URL** (from Azure portal)
 - Enable ☑ **Remember credentials** for automatic login
 - Click **"Save & Continue"**
+
+---
 
 ### 2. Text-to-Speech with Azure
 
@@ -193,8 +212,8 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
     - **"Generate & Play"**: Convert and play audio immediately
     - **"Generate & Save"**: Convert and save to Downloads folder
 
-
 ## Project Roadmap
 
 - Usage tracking and free character count monitoring
 - AI-powered text refinement (typo correction, grammar improvement)
+- Enhance error handling
