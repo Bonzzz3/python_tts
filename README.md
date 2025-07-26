@@ -195,7 +195,7 @@ A comprehensive Python Text-to-Speech application supporting multiple TTS servic
 - In the "Azure Speech Service Setup" section, enter your Azure credentials:
   - **Subscription Key** (Key 1 from Azure portal)
   - **Endpoint URL** (from Azure portal)
-- Enable ☑ **Remember credentials** for automatic login
+- Enable ☑ **Remember me** for automatic login
 - Click **"Save & Continue"**
 
 ---
