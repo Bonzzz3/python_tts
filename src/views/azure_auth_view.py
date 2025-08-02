@@ -41,5 +41,4 @@ class AzureAuthView(ttk.Frame):
         
         # Connect button
         ttk.Button(button_frame, text="Connect", 
-                  command=self.controller.verify_and_continue,
-                  style='Accent.TButton').pack(side="left", padx=5)
+                  command=self.controller.verify_and_continue).pack(side="left", padx=5)

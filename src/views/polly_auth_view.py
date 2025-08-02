@@ -27,6 +27,5 @@ class PollyAuthenticationView(ttk.Frame):
         
         # Submit Button
         ttk.Button(self, text="Save & Continue", 
-                  command=self.controller.verify_and_continue, 
-                  style='Accent.TButton').pack(pady=20)
+                  command=self.controller.verify_and_continue).pack(pady=20)
 

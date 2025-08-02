@@ -73,15 +73,13 @@ class AzureMainView(ttk.Frame):
         ttk.Button(
             button_frame,
             text="Generate & Play",
-            command=self.controller.play_audio_directly,
-            style='Accent.TButton'
+            command=self.controller.play_audio_directly
         ).pack(side='left', padx=5)
         
         ttk.Button(
             button_frame,
             text="Generate & Save",
-            command=self.controller.generate_and_save,
-            style='Accent.TButton'
+            command=self.controller.generate_and_save
         ).pack(side='left', padx=5)
 
     def clear_frame(self):
