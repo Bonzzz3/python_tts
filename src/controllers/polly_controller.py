@@ -370,29 +370,67 @@ class PollyController:
             self.status_bar.update_status("Generating...")
             self.main_frame.master.update()
 
+            output_format = self.output_format_var.get()
             response = self.polly_manager.synthesize_speech(
                 region=self.region_var.get(),
                 text=text,
                 voice_id=self.voice_var.get().split(' ')[0],
                 engine=self.engine_var.get(),
-                output_format=self.output_format_var.get(),
+                output_format=output_format,
                 sample_rate=self.sample_rate_var.get()
             )
 
-            # Create temp file
-            with tempfile.NamedTemporaryFile(suffix='.mp3', delete=True) as tmp_file:
-                tmp_file.write(response['AudioStream'].read())
-                tmp_file.flush()
+            # Create temp file with appropriate extension
+            if output_format == 'mp3':
+                suffix = '.mp3'
+            elif output_format == 'ogg_vorbis':
+                suffix = '.ogg'
+            else:
+                suffix = '.wav'
+
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp_file:
+                audio_data = response['AudioStream'].read()
                 
+                if output_format == 'pcm':
+                    # Convert PCM to WAV for playback
+                    import struct
+                    sample_rate = int(self.sample_rate_var.get())
+                    # Write simple WAV header for PCM
+                    tmp_file.write(b'RIFF')
+                    tmp_file.write(struct.pack('<I', 36 + len(audio_data)))
+                    tmp_file.write(b'WAVE')
+                    tmp_file.write(b'fmt ')
+                    tmp_file.write(struct.pack('<I', 16))
+                    tmp_file.write(struct.pack('<H', 1))
+                    tmp_file.write(struct.pack('<H', 1))
+                    tmp_file.write(struct.pack('<I', sample_rate))
+                    tmp_file.write(struct.pack('<I', sample_rate * 2))
+                    tmp_file.write(struct.pack('<H', 2))
+                    tmp_file.write(struct.pack('<H', 16))
+                    tmp_file.write(b'data')
+                    tmp_file.write(struct.pack('<I', len(audio_data)))
+                    tmp_file.write(audio_data)
+                else:
+                    tmp_file.write(audio_data)
+                
+                tmp_file.flush()
+                temp_path = tmp_file.name
+                
+            try:
                 # Play audio based on OS
                 if platform.system() == "Darwin":
-                    subprocess.run(["afplay", tmp_file.name])
+                    subprocess.run(["afplay", temp_path])
                 elif platform.system() == "Windows":
-                    subprocess.run(["start", tmp_file.name], shell=True)
+                    subprocess.run(["start", temp_path], shell=True)
                 elif platform.system() == "Linux":
-                    subprocess.run(["aplay", tmp_file.name])
+                    subprocess.run(["aplay", temp_path])
                 
-            self.update_status("Audio played successfully")
+                self.update_status("Audio played successfully")
+            finally:
+                try:
+                    os.unlink(temp_path)
+                except OSError:
+                    pass
             
         except Exception as e:
             self.update_status(f"Playback error: {str(e)}", is_error=True)
