@@ -198,30 +198,25 @@ class AzureController:
 
     def verify_and_continue(self):
         """Verify Azure credentials and continue"""
-        self.status_bar.update_status("Verifying Azure credentials...")
-        self.main_frame.master.update()
+        api_key = self.api_key_var.get().strip()
+        endpoint = self.endpoint_var.get().strip()
+        
+        if not api_key or not endpoint:
+            self.update_status("Both API Key and Endpoint are required", is_error=True)
+            messagebox.showerror("Error", "Both Subscription Key and Endpoint are required")
+            return
         
         try:
-            api_key = self.api_key_var.get().strip()
-            endpoint = self.endpoint_var.get().strip()
+            self.update_status("Verifying Azure credentials...")
+            self.main_frame.master.update()
             
-            if not api_key or not endpoint:
-                self.status_bar.update_status("Both API Key and Endpoint are required", is_error=True)
-                messagebox.showerror("Error", "Both Subscription Key and Endpoint are required")
-                return
-            
-            # Test credentials using TTS manager
             if self.tts_manager.test_credentials(api_key, endpoint):
-                self.status_bar.update_status("Credentials verified successfully!")
+                self.update_status("Credentials verified successfully!")
                 
                 # Save credentials if remember me is checked
-                if hasattr(self, 'azure_auth_ui') and hasattr(self.azure_auth_ui, 'remember_var'):
+                if hasattr(self, 'azure_auth_ui'):
                     remember = self.azure_auth_ui.remember_var.get()
-                    if self.auth_manager.save_credentials(remember):
-                        if remember:
-                            print("Azure credentials saved to secure storage")
-                        else:
-                            print("Azure credentials not saved (remember me unchecked)")
+                    self.auth_manager.save_credentials(remember)
                 
                 self._show_azure_main_interface()
             else:
@@ -229,40 +224,44 @@ class AzureController:
             
         except Exception as e:
             error_msg = str(e)
-            self.status_bar.update_status(f"Verification failed: {error_msg}", is_error=True)
+            self.update_status(f"Verification failed: {error_msg}", is_error=True)
             messagebox.showerror("Azure Error", f"Invalid credentials: {error_msg}")
 
-    def generate_and_save(self):
-        """Generate speech and save to file"""
+    def _validate_synthesis_inputs(self):
+        """Validate inputs for synthesis"""
         if not hasattr(self, 'azure_ui'):
             self.update_status("UI not initialized.", is_error=True)
-            return
+            return None
             
         text = self.azure_ui.text_input.get("1.0", tk.END).strip()
         
         if not text:
             self.update_status("Please enter text.", is_error=True)
-            return
+            return None
         
         if not self.api_key_var.get() or not self.endpoint_var.get():
             self.update_status("Azure configuration is incomplete.", is_error=True)
-            return
+            return None
             
         if not self.voice_var.get():
             self.update_status("Please select a voice.", is_error=True)
+            return None
+        
+        return text
+
+    def generate_and_save(self):
+        """Generate speech and save to file"""
+        text = self._validate_synthesis_inputs()
+        if not text:
             return
         
-        self.status_bar.update_status("Generating audio...")
-        self.main_frame.master.update()
-        
         try:
-            # Get the actual voice short name from the selected display name
-            voice_short_name = self._get_voice_short_name(self.voice_var.get())
+            self.update_status("Generating audio...")
+            self.main_frame.master.update()
             
-            # Generate output file path
+            voice_short_name = self._get_voice_short_name(self.voice_var.get())
             output_path = self.tts_manager.generate_output_filename(voice_short_name)
             
-            # Synthesize speech using TTS manager
             success, message = self.tts_manager.synthesize_to_file(
                 text,
                 self.api_key_var.get(),
@@ -273,14 +272,7 @@ class AzureController:
             
             if success:
                 self.update_status(message)
-                
-                # Open file explorer to show the file
-                if platform.system() == "Darwin":
-                    subprocess.run(["open", "-R", output_path])
-                elif platform.system() == "Windows":
-                    subprocess.run(["explorer", "/select,", output_path])
-                elif platform.system() == "Linux":
-                    subprocess.run(["xdg-open", os.path.dirname(output_path)])
+                self._open_file_location(output_path)
             else:
                 self.update_status(message, is_error=True)
                 
@@ -289,32 +281,16 @@ class AzureController:
 
     def play_audio_directly(self):
         """Generate and play audio without saving"""
-        if not hasattr(self, 'azure_ui'):
-            self.update_status("UI not initialized.", is_error=True)
+        text = self._validate_synthesis_inputs()
+        if not text:
             return
-            
-        text = self.azure_ui.text_input.get("1.0", tk.END).strip()
-        
-        if not text.strip():
-            self.update_status("Please enter text", is_error=True)
-            return
-        
-        if not self.api_key_var.get() or not self.endpoint_var.get():
-            self.update_status("Azure configuration is incomplete.", is_error=True)
-            return
-            
-        if not self.voice_var.get():
-            self.update_status("Please select a voice.", is_error=True)
-            return
-        
-        self.status_bar.update_status("Generating and playing...")
-        self.main_frame.master.update()
         
         try:
-            # Get the actual voice short name from the selected display name
+            self.update_status("Generating and playing...")
+            self.main_frame.master.update()
+            
             voice_short_name = self._get_voice_short_name(self.voice_var.get())
             
-            # Synthesize speech to temp file using TTS manager
             success, tmp_path, message = self.tts_manager.synthesize_to_temp_file(
                 text,
                 self.api_key_var.get(),
@@ -323,26 +299,40 @@ class AzureController:
             )
             
             if success:
-                # Play audio based on OS
-                if platform.system() == "Darwin":
-                    subprocess.run(["afplay", tmp_path])
-                elif platform.system() == "Windows":
-                    subprocess.run(["start", tmp_path], shell=True)
-                elif platform.system() == "Linux":
-                    subprocess.run(["aplay", tmp_path])
-                
+                self._play_audio_file(tmp_path)
                 self.update_status("Audio played successfully")
-                
-                # Clean up temp file
-                try:
-                    os.unlink(tmp_path)
-                except Exception:
-                    pass
             else:
                 self.update_status(message, is_error=True)
                 
         except Exception as e:
             self.update_status(f"Playback error: {str(e)}", is_error=True)
+
+    def _open_file_location(self, file_path):
+        """Open file location in system file manager"""
+        system = platform.system()
+        if system == "Darwin":  # macOS
+            subprocess.run(["open", "-R", file_path])
+        elif system == "Windows":
+            subprocess.run(["explorer", "/select,", file_path])
+        elif system == "Linux":
+            subprocess.run(["xdg-open", os.path.dirname(file_path)])
+
+    def _play_audio_file(self, file_path):
+        """Play audio file using system player"""
+        system = platform.system()
+        try:
+            if system == "Darwin":  # macOS
+                subprocess.run(["afplay", file_path])
+            elif system == "Windows":
+                subprocess.run(["start", file_path], shell=True)
+            elif system == "Linux":
+                subprocess.run(["aplay", file_path])
+        finally:
+            # Clean up temp file
+            try:
+                os.unlink(file_path)
+            except OSError:
+                pass
 
     def update_status(self, message, is_error=False):
         """Update status bar with message"""
