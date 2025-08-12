@@ -20,6 +20,7 @@ class AzureController:
         self.endpoint_var = tk.StringVar()
         self.language_var = tk.StringVar()
         self.voice_var = tk.StringVar()
+        self.gender_var = tk.StringVar(value="All")
         self.char_count_var = tk.StringVar(value="0/3000")
         self.remaining_chars = 3000
         
@@ -30,8 +31,7 @@ class AzureController:
         self.tts_manager = AzureSpeechManager()
         
         # Try to load saved credentials
-        if self.auth_manager.load_credentials():
-            print("Azure credentials loaded from secure storage")
+        self.auth_manager.load_credentials()
         
         # Dynamic voice data will be managed by TTS manager
         self.voices_loaded = False
@@ -142,9 +142,11 @@ class AzureController:
             self.update_status(f"Error updating languages: {str(e)}", is_error=True)
 
     def update_voices(self, event=None):
-        """Update available voices based on selected language"""
+        """Update available voices based on selected language and gender filter"""
         try:
             selected_lang = self.language_var.get()
+            selected_gender = self.gender_var.get()
+            
             if not selected_lang:
                 if hasattr(self, 'azure_ui'):
                     self.azure_ui.voice_dropdown['values'] = []
@@ -153,16 +155,41 @@ class AzureController:
             # Get voices for selected language from TTS manager
             voice_displays = self.tts_manager.get_voices_for_language(selected_lang)
             
+            # Filter by gender if not "All"
+            if selected_gender != "All":
+                filtered_voices = []
+                for voice_display in voice_displays:
+                    voice_short_name = self.tts_manager.get_voice_short_name(voice_display, selected_lang)
+                    voice_gender = self.tts_manager.get_voice_gender(voice_short_name)
+                    if voice_gender and voice_gender.lower() == selected_gender.lower():
+                        filtered_voices.append(voice_display)
+                voice_displays = filtered_voices
+            
             if hasattr(self, 'azure_ui'):
                 self.azure_ui.voice_dropdown['values'] = voice_displays
             
             if voice_displays:
                 self.voice_var.set(voice_displays[0])
+            else:
+                self.voice_var.set("")
                 
-            self.update_status(f"Loaded {len(voice_displays)} voices for {selected_lang}")
+            gender_text = f" ({selected_gender})" if selected_gender != "All" else ""
+            self.update_status(f"Loaded {len(voice_displays)} voices for {selected_lang}{gender_text}")
             
         except Exception as e:
             self.update_status(f"Error updating voices: {str(e)}", is_error=True)
+
+    def update_gender_filter(self, event=None):
+        """Update voices when gender filter changes"""
+        self.update_voices()
+
+    def get_available_genders_for_language(self, language):
+        """Get available genders for a specific language"""
+        try:
+            return self.tts_manager.get_available_genders_for_language(language)
+        except Exception as e:
+            print(f"Error getting genders for language: {e}")
+            return ["All", "Male", "Female"]
 
     def _get_voice_short_name(self, voice_display):
         """Get the actual voice short name from the display name"""

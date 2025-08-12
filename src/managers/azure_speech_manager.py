@@ -90,7 +90,8 @@ class AzureSpeechManager:
             self.language_voice_map[lang_name]["voices"].append({
                 "display": voice_display,
                 "short_name": short_name,
-                "locale": locale
+                "locale": locale,
+                "gender": gender
             })
         
         # Sort languages and voices
@@ -143,6 +144,38 @@ class AzureSpeechManager:
                 return voice["short_name"]
         
         return voice_display
+    
+    def get_voice_gender(self, voice_short_name):
+        """Get the gender of a voice by its short name"""
+        try:
+            # Search through all languages for the voice
+            for lang_data in self.language_voice_map.values():
+                for voice in lang_data["voices"]:
+                    if voice["short_name"] == voice_short_name:
+                        return voice.get("gender", "Unknown")
+            return None
+        except Exception as e:
+            print(f"Error getting voice gender: {e}")
+            return None
+    
+    def get_available_genders_for_language(self, language):
+        """Get available genders for a specific language"""
+        try:
+            if language not in self.language_voice_map:
+                return ["All"]
+            
+            voices_data = self.language_voice_map[language]["voices"]
+            genders = set()
+            
+            for voice in voices_data:
+                gender = voice.get("gender", "Unknown")
+                if gender and gender != "Unknown":
+                    genders.add(gender)
+            
+            return ["All"] + sorted(list(genders))
+        except Exception as e:
+            print(f"Error getting genders for language: {e}")
+            return ["All", "Male", "Female"]
     
     def synthesize_to_file(self, text, api_key, endpoint, voice_short_name, output_path):
         """Synthesize speech and save to file"""
@@ -218,3 +251,22 @@ class AzureSpeechManager:
         
         voice_name = voice_short_name.replace("-", "_")
         return os.path.join(output_dir, f"azure_tts_{voice_name}_{timestamp}.wav")
+
+    def get_voices_by_gender(self, language, gender):
+        """Get voices filtered by language and gender"""
+        try:
+            all_voices = self.get_voices_for_language(language)
+            if gender == "All":
+                return all_voices
+            
+            filtered_voices = []
+            for voice_display in all_voices:
+                voice_short_name = self.get_voice_short_name(voice_display, language)
+                voice_gender = self.get_voice_gender(voice_short_name)
+                if voice_gender and voice_gender.lower() == gender.lower():
+                    filtered_voices.append(voice_display)
+            
+            return filtered_voices
+        except Exception as e:
+            print(f"Error filtering voices by gender: {e}")
+            return []

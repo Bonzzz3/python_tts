@@ -57,10 +57,20 @@ class AzureMainView(ttk.Frame):
                                             state="readonly")
         self.language_dropdown.pack(fill="x", pady=5)
         self.language_dropdown.bind("<<ComboboxSelected>>", 
-                                   self.controller.update_voices)
+                                   self._on_language_changed)
+        
+        # Gender Filter Selection
+        ttk.Label(text_frame, text="Gender:").pack(anchor="w")
+        self.gender_dropdown = ttk.Combobox(text_frame, 
+                                          textvariable=self.controller.gender_var, 
+                                          values=["All", "Male", "Female"],
+                                          state="readonly")
+        self.gender_dropdown.pack(fill="x", pady=5)
+        self.gender_dropdown.bind("<<ComboboxSelected>>", 
+                                 self.controller.update_gender_filter)
         
         # Voice Selection
-        ttk.Label(text_frame, text="Select Voice:").pack(anchor="w")
+        ttk.Label(text_frame, text="Voice:").pack(anchor="w")
         self.voice_dropdown = ttk.Combobox(text_frame, 
                                           textvariable=self.controller.voice_var, 
                                           state="readonly")
@@ -81,6 +91,20 @@ class AzureMainView(ttk.Frame):
             text="Generate & Save",
             command=self.controller.generate_and_save
         ).pack(side='left', padx=5)
+
+    def _on_language_changed(self, event=None):
+        """Handle language change event"""
+        # Update available genders for the selected language
+        selected_lang = self.controller.language_var.get()
+        if selected_lang:
+            available_genders = self.controller.get_available_genders_for_language(selected_lang)
+            self.gender_dropdown['values'] = available_genders
+            
+            # Reset gender filter to "All" when language changes
+            self.controller.gender_var.set("All")
+        
+        # Update voices for the new language
+        self.controller.update_voices()
 
     def clear_frame(self):
         """Clear all widgets from main frame"""
