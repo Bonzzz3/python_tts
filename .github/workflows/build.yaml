@@ -66,29 +66,26 @@ jobs:
   build-linux:
     name: Build for Linux
     runs-on: ubuntu-latest
+    container:
+      image: rockylinux:8
     steps:
+      - name: Install git and system dependencies
+        run: |
+          dnf update -y
+          dnf install -y git python3 python3-pip python3-tkinter gcc python3-devel
+
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
-      - name: Install system dependencies
+      - name: Install Python dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-tk
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller
-          pip install -r requirements.txt
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pyinstaller
+          python3 -m pip install -r requirements.txt
 
       - name: Build Linux executable
         run: |
-          pyinstaller --onefile --windowed --additional-hooks-dir=hooks --name TTSApp-linux src/main.py
+          python3 -m PyInstaller --onefile --windowed --additional-hooks-dir=hooks --name TTSApp-linux src/main.py
 
       - name: Upload Linux executable
         uses: actions/upload-artifact@v4
