@@ -38,7 +38,7 @@ class AzureMainView(ttk.Frame):
         
         # Text Input
         ttk.Label(text_frame, text="Enter Text:").pack(anchor="w")
-        self.text_input = scrolledtext.ScrolledText(text_frame, width=60, height=10)
+        self.text_input = scrolledtext.ScrolledText(text_frame, width=60, height=5)
         self.text_input.pack(fill="both", expand=True, pady=5)
         
         # Character count display

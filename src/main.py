@@ -7,7 +7,7 @@ def main():
     
     # Set window sizes
     root.minsize(600, 800)
-    root.geometry("800x800")
+    root.geometry("600x800")
     root.resizable(True, True)
     
     # Configure style

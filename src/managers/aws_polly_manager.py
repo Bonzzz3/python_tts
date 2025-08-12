@@ -32,6 +32,7 @@ class AWSPollyManager:
         self.access_key_var = access_key_var
         self.secret_key_var = secret_key_var
         self.language_map = {}
+        self.voices_data = {}
 
     def _get_client(self, region):
         """Get Polly client"""
@@ -65,34 +66,73 @@ class AWSPollyManager:
         return self.SAMPLE_RATES.get(output_format, [])
 
     def get_languages(self, region, engine):
-        """Get available languages"""
+        """Get available languages and store voice data"""
         try:
             client = self._get_client(region)
             response = client.describe_voices(Engine=engine)
             
+            # Store both language map and voices data
             self.language_map = {
                 v['LanguageCode']: v['LanguageName'] 
                 for v in response['Voices']
             }
+            
+            # Store voices data grouped by language code
+            self.voices_data = {}
+            for voice in response['Voices']:
+                lang_code = voice['LanguageCode']
+                if lang_code not in self.voices_data:
+                    self.voices_data[lang_code] = []
+                self.voices_data[lang_code].append(voice)
+            
             return (True, None)
         except Exception as e:
             error_msg = str(e)
             return (False, error_msg)
 
-    def get_voices(self, language_code, engine, region):
-        """Get voices for specific language"""
+    def get_voices(self, language_code, engine, region, gender_filter="All"):
+        """Get voices for specific language with optional gender filter"""
         try:
             client = self._get_client(region)
             response = client.describe_voices(
                 Engine=engine,
                 LanguageCode=language_code
             )
-            return [f"{v['Id']} ({v['Gender']})" for v in response['Voices']]
+            
+            voices = response['Voices']
+            
+            # Filter by gender if not "All"
+            if gender_filter != "All":
+                voices = [v for v in voices if v['Gender'] == gender_filter]
+            
+            return [f"{v['Id']} ({v['Gender']})" for v in voices]
         except Exception as e:
             print(f"Error getting voices: {str(e)}")
             return []
 
-    def synthesize_speech(self, region, text, voice_id, engine,output_format, sample_rate):
+    def get_available_genders_for_language(self, language_code, engine, region):
+        """Get available genders for a specific language"""
+        try:
+            client = self._get_client(region)
+            response = client.describe_voices(
+                Engine=engine,
+                LanguageCode=language_code
+            )
+            
+            genders = set()
+            for voice in response['Voices']:
+                genders.add(voice['Gender'])
+            
+            return ["All"] + sorted(list(genders))
+        except Exception as e:
+            print(f"Error getting genders for language: {e}")
+            return ["All", "Male", "Female"]
+
+    def get_voice_id_from_display(self, voice_display):
+        """Extract voice ID from display string (e.g., 'Joanna (Female)' -> 'Joanna')"""
+        return voice_display.split(' ')[0] if voice_display else ""
+
+    def synthesize_speech(self, region, text, voice_id, engine, output_format, sample_rate):
         """Generate speech synthesis"""
         client = self._get_client(region)
         return client.synthesize_speech(

@@ -25,6 +25,7 @@ class PollyController:
         self.engine_var = tk.StringVar(value="neural")
         self.language_var = tk.StringVar()
         self.voice_var = tk.StringVar()
+        self.gender_var = tk.StringVar(value="All")
         self.output_format_var = tk.StringVar(value="mp3")
         self.sample_rate_var = tk.StringVar(value="22050")
         self.remember_var = tk.IntVar(value=1)
@@ -170,23 +171,50 @@ class PollyController:
             self.update_status(f"Error updating languages: {str(e)}", is_error=True)
 
     def update_voices(self, event=None):
-        """Update available voices with gender information"""
+        """Update available voices with gender filtering"""
         try:
             selected_lang = self.language_var.get()
             if not selected_lang:
                 return
                 
             lang_code = selected_lang.split('(')[-1].rstrip(')')
+            selected_gender = self.gender_var.get()
             
-            voices = self.polly_manager.get_voices(lang_code, self.engine_var.get(), self.region_var.get())
+            voices = self.polly_manager.get_voices(
+                lang_code, 
+                self.engine_var.get(), 
+                self.region_var.get(),
+                selected_gender
+            )
+            
             self.main_ui.voice_dropdown['values'] = voices
             if voices:
                 self.voice_var.set(voices[0])
+            else:
+                self.voice_var.set("")
                 
-            self.update_status(f"Loaded {len(voices)} {self.engine_var.get()} voices for {selected_lang}")
+            gender_text = f" ({selected_gender})" if selected_gender != "All" else ""
+            self.update_status(f"Loaded {len(voices)} {self.engine_var.get()} voices for {selected_lang}{gender_text}")
             
         except Exception as e:
             self.update_status(f"Error updating voices: {str(e)}", is_error=True)
+
+    def update_gender_filter(self, event=None):
+        """Update voices when gender filter changes"""
+        self.update_voices()
+
+    def get_available_genders_for_language(self, language):
+        """Get available genders for a specific language"""
+        try:
+            lang_code = language.split('(')[-1].rstrip(')')
+            return self.polly_manager.get_available_genders_for_language(
+                lang_code, 
+                self.engine_var.get(), 
+                self.region_var.get()
+            )
+        except Exception as e:
+            print(f"Error getting genders for language: {e}")
+            return ["All", "Male", "Female"]
 
     def update_output_formats(self, event=None):
         """Update available output formats and sample rates"""
@@ -293,32 +321,42 @@ class PollyController:
         
         return f"AWS Error: {error_msg.split(':')[-1].strip()}"
 
-    def generate(self):
-        """Generate speech from text"""
-        text = self.main_ui.text_input.get("1.0", tk.END).strip()
-        
-        selected_voice = self.voice_var.get()
-        if selected_voice:
-            voice_id = selected_voice.split(' ')[0]
-        else:
-            voice_id = ""
+    def _validate_synthesis_inputs(self):
+        """Validate inputs for synthesis"""
+        if not hasattr(self, 'main_ui'):
+            self.update_status("UI not initialized.", is_error=True)
+            return None
             
-        engine = self.engine_var.get()
-        output_format = self.output_format_var.get()
+        text = self.main_ui.text_input.get("1.0", tk.END).strip()
         
         if not text:
             self.update_status("Please enter text.", is_error=True)
-            return
-            
-        if not all([self.access_key_var.get(), self.secret_key_var.get(), 
-                   self.region_var.get(), voice_id, engine, output_format]):
+            return None
+        
+        if not all([self.access_key_var.get(), self.secret_key_var.get(), self.region_var.get()]):
             self.update_status("AWS configuration is incomplete.", is_error=True)
+            return None
+            
+        if not self.voice_var.get():
+            self.update_status("Please select a voice.", is_error=True)
+            return None
+        
+        return text
+
+    def generate(self):
+        """Generate speech from text"""
+        text = self._validate_synthesis_inputs()
+        if not text:
             return
         
-        self.status_bar.update_status("Generating...")
-        self.main_frame.master.update()
-
         try:
+            voice_id = self.polly_manager.get_voice_id_from_display(self.voice_var.get())
+            engine = self.engine_var.get()
+            output_format = self.output_format_var.get()
+            
+            self.status_bar.update_status("Generating...")
+            self.main_frame.master.update()
+
             response = self.polly_manager.synthesize_speech(
                 region=self.region_var.get(),
                 text=text,
@@ -349,32 +387,28 @@ class PollyController:
             self.update_status(f"Audio saved to: {output_path}")
             
             # Open file explorer to show the file
-            if platform.system() == "Darwin":
-                subprocess.run(["open", "-R", output_path])
-            elif platform.system() == "Windows":
-                subprocess.run(["explorer", "/select,", output_path])
-            elif platform.system() == "Linux":
-                subprocess.run(["xdg-open", os.path.dirname(output_path)])
+            self._open_file_location(output_path)
                 
         except Exception as e:
             self.update_status(f"Error: {str(e)}", is_error=True)
 
     def play_audio_directly(self):
         """Generate and play audio without saving"""
-        text = self.main_ui.text_input.get("1.0", tk.END).strip()
+        text = self._validate_synthesis_inputs()
+        if not text:
+            return
+        
         try:
-            if not text.strip():
-                self.update_status("Please enter text", is_error=True)
-                return
-
             self.status_bar.update_status("Generating...")
             self.main_frame.master.update()
 
+            voice_id = self.polly_manager.get_voice_id_from_display(self.voice_var.get())
             output_format = self.output_format_var.get()
+            
             response = self.polly_manager.synthesize_speech(
                 region=self.region_var.get(),
                 text=text,
-                voice_id=self.voice_var.get().split(' ')[0],
+                voice_id=voice_id,
                 engine=self.engine_var.get(),
                 output_format=output_format,
                 sample_rate=self.sample_rate_var.get()
@@ -416,24 +450,47 @@ class PollyController:
                 tmp_file.flush()
                 temp_path = tmp_file.name
                 
-            try:
-                # Play audio based on OS
-                if platform.system() == "Darwin":
-                    subprocess.run(["afplay", temp_path])
-                elif platform.system() == "Windows":
-                    subprocess.run(["start", temp_path], shell=True)
-                elif platform.system() == "Linux":
-                    subprocess.run(["aplay", temp_path])
-                
-                self.update_status("Audio played successfully")
-            finally:
-                try:
-                    os.unlink(temp_path)
-                except OSError:
-                    pass
+            self._play_audio_file(temp_path)
+            self.update_status("Audio played successfully")
             
         except Exception as e:
             self.update_status(f"Playback error: {str(e)}", is_error=True)
+
+    def on_language_changed(self, event=None):
+        """Handle language change event"""
+        selected_lang = self.language_var.get()
+        if selected_lang and hasattr(self, 'main_ui'):
+            # Update available genders for the selected language
+            available_genders = self.get_available_genders_for_language(selected_lang)
+            self.main_ui.gender_dropdown['values'] = available_genders
+            self.gender_var.set("All")
+        
+        # Update voices for the new language
+        self.update_voices()
+
+    def _open_file_location(self, file_path):
+        """Open file location in system file manager"""
+        if platform.system() == "Darwin":
+            subprocess.run(["open", "-R", file_path])
+        elif platform.system() == "Windows":
+            subprocess.run(["explorer", "/select,", file_path])
+        elif platform.system() == "Linux":
+            subprocess.run(["xdg-open", os.path.dirname(file_path)])
+
+    def _play_audio_file(self, file_path):
+        """Play audio file using system player"""
+        try:
+            if platform.system() == "Darwin":
+                subprocess.run(["afplay", file_path])
+            elif platform.system() == "Windows":
+                subprocess.run(["start", file_path], shell=True)
+            elif platform.system() == "Linux":
+                subprocess.run(["aplay", file_path])
+        finally:
+            try:
+                os.unlink(file_path)
+            except OSError:
+                pass
 
     def update_status(self, message, is_error=False):
         """Update status bar with message"""
